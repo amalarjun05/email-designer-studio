@@ -10,6 +10,22 @@ export interface ExtraBlock {
   text: string;
 }
 
+export interface ImageSettings {
+  size: number;
+  rotation: number;
+  borderRadius: number;
+}
+
+export type ContentBlockType = 'text' | 'image' | 'button' | 'divider' | 'spacer';
+
+export interface ContentBlock {
+  id: number;
+  type: ContentBlockType;
+  content: string;
+  link?: string;
+  imageSettings?: ImageSettings;
+}
+
 export interface SocialLinks {
   facebook: string;
   twitter: string;
@@ -19,10 +35,12 @@ export interface SocialLinks {
 
 export interface EmailData {
   logo: string;
+  logoSettings: ImageSettings;
   title: string;
   body: string;
   buttons: EmailButton[];
   extraBlocks: ExtraBlock[];
+  contentBlocks: ContentBlock[];
   social: SocialLinks;
   footer: string;
   accentColor: string;

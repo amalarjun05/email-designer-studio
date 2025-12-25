@@ -9,10 +9,20 @@ import {
   Linkedin, 
   Instagram, 
   Link as LinkIcon,
-  Palette
+  Palette,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import { EmailData, ColorPalette } from './types';
+import { EmailData, ColorPalette, ContentBlockType, ImageSettings } from './types';
 import { COLOR_PALETTES } from './templates';
+import { ImageControls } from './ImageControls';
+import { ContentBlockEditor } from './ContentBlockEditor';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { useState } from 'react';
 
 interface EditorSidebarProps {
   data: EmailData;
@@ -24,6 +34,11 @@ interface EditorSidebarProps {
   removeExtraBlock: (id: number) => void;
   updateExtraBlock: (id: number, value: string) => void;
   updateSocial: (platform: string, value: string) => void;
+  addContentBlock: (type: ContentBlockType) => void;
+  removeContentBlock: (id: number) => void;
+  updateContentBlock: (id: number, field: string, value: any) => void;
+  moveContentBlock: (id: number, direction: 'up' | 'down') => void;
+  updateLogoSettings: (settings: ImageSettings) => void;
 }
 
 export const EditorSidebar = ({
@@ -35,9 +50,15 @@ export const EditorSidebar = ({
   addExtraBlock,
   removeExtraBlock,
   updateExtraBlock,
-  updateSocial
+  updateSocial,
+  addContentBlock,
+  removeContentBlock,
+  updateContentBlock,
+  moveContentBlock,
+  updateLogoSettings
 }: EditorSidebarProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logoControlsOpen, setLogoControlsOpen] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,39 +105,60 @@ export const EditorSidebar = ({
           </div>
         </section>
 
-        {/* Logo Section */}
+        {/* Logo Section with Controls */}
         <section>
           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-3">
             Logo Asset
           </label>
-          <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl border border-border">
-            <img 
-              src={data.logo} 
-              className="w-12 h-12 rounded-xl object-cover shadow-soft bg-card" 
-              alt="Preview" 
-            />
-            <div className="flex-1 space-y-2">
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full py-2 flex items-center justify-center gap-2 text-xs font-semibold bg-card border border-border rounded-lg hover:bg-secondary transition-all shadow-soft"
-              >
-                <ImageIcon className="w-3.5 h-3.5" /> Upload
-              </button>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handleImageUpload} 
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl border border-border">
+              <img 
+                src={data.logo} 
+                className="w-12 h-12 rounded-xl object-cover shadow-soft bg-card" 
+                alt="Preview"
+                style={{
+                  transform: `rotate(${data.logoSettings.rotation}deg)`,
+                  borderRadius: `${data.logoSettings.borderRadius}px`,
+                  width: `${Math.min(data.logoSettings.size, 48)}px`,
+                  height: `${Math.min(data.logoSettings.size, 48)}px`
+                }}
               />
-              <input 
-                type="text"
-                placeholder="Or paste URL"
-                className="w-full text-[10px] p-2 bg-card border border-border rounded-lg outline-none focus:ring-2 ring-primary/20 transition-all"
-                value={data.logo}
-                onChange={(e) => updateData('logo', e.target.value)}
-              />
+              <div className="flex-1 space-y-2">
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-2 flex items-center justify-center gap-2 text-xs font-semibold bg-card border border-border rounded-lg hover:bg-secondary transition-all shadow-soft"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" /> Upload
+                </button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleImageUpload} 
+                />
+                <input 
+                  type="text"
+                  placeholder="Or paste URL"
+                  className="w-full text-[10px] p-2 bg-card border border-border rounded-lg outline-none focus:ring-2 ring-primary/20 transition-all"
+                  value={data.logo}
+                  onChange={(e) => updateData('logo', e.target.value)}
+                />
+              </div>
             </div>
+            
+            <Collapsible open={logoControlsOpen} onOpenChange={setLogoControlsOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-3 text-[10px] font-semibold text-muted-foreground bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-all">
+                <span>Image Controls</span>
+                {logoControlsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <ImageControls 
+                  settings={data.logoSettings} 
+                  onChange={updateLogoSettings}
+                />
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </section>
 
@@ -140,6 +182,16 @@ export const EditorSidebar = ({
             onChange={(e) => updateData('body', e.target.value)}
           />
         </section>
+
+        {/* Content Blocks */}
+        <ContentBlockEditor
+          blocks={data.contentBlocks}
+          accentColor={data.accentColor}
+          onAdd={addContentBlock}
+          onRemove={removeContentBlock}
+          onUpdate={updateContentBlock}
+          onMove={moveContentBlock}
+        />
 
         {/* Buttons */}
         <section className="space-y-3">

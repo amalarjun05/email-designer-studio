@@ -1,4 +1,10 @@
-import { EmailTemplate, ColorPalette } from './types';
+import { EmailTemplate, ColorPalette, ImageSettings } from './types';
+
+const defaultLogoSettings: ImageSettings = {
+  size: 80,
+  rotation: 0,
+  borderRadius: 16
+};
 
 export const TEMPLATES: EmailTemplate[] = [
   {
@@ -9,12 +15,14 @@ export const TEMPLATES: EmailTemplate[] = [
     icon: 'sparkles',
     structure: {
       logo: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=100&h=100&fit=crop',
+      logoSettings: { ...defaultLogoSettings },
       title: 'Welcome to the Community!',
       body: 'We are thrilled to have you here. Our mission is to provide you with the best experience possible. To get started, check out our quick-start guide below.',
       buttons: [
         { id: Date.now(), text: 'Get Started', link: '#', primary: true }
       ],
       extraBlocks: [],
+      contentBlocks: [],
       social: { facebook: '', twitter: '', linkedin: '', instagram: '' },
       footer: '123 Business St, Tech City • Unsubscribe',
       accentColor: '#6366F1',
@@ -29,6 +37,7 @@ export const TEMPLATES: EmailTemplate[] = [
     icon: 'newspaper',
     structure: {
       logo: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=100&h=100&fit=crop',
+      logoSettings: { ...defaultLogoSettings },
       title: 'The Monthly Digest',
       body: 'This month we explored new ways to improve productivity and remote collaboration.',
       buttons: [
@@ -37,6 +46,7 @@ export const TEMPLATES: EmailTemplate[] = [
       extraBlocks: [
         { id: Date.now() + 1, text: 'Did you know? Teams using collaborative tools report a 25% increase in efficiency.' }
       ],
+      contentBlocks: [],
       social: { facebook: '#', twitter: '#', linkedin: '#', instagram: '' },
       footer: 'Stay connected with us on social media.',
       accentColor: '#10B981',
@@ -51,6 +61,7 @@ export const TEMPLATES: EmailTemplate[] = [
     icon: 'tag',
     structure: {
       logo: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=100&h=100&fit=crop',
+      logoSettings: { ...defaultLogoSettings },
       title: '🎉 Exclusive 50% Off Sale!',
       body: 'For a limited time only, enjoy half off on all our premium products. This offer won\'t last long – grab your favorites before they\'re gone!',
       buttons: [
@@ -60,6 +71,7 @@ export const TEMPLATES: EmailTemplate[] = [
       extraBlocks: [
         { id: Date.now() + 2, text: 'Use code SAVE50 at checkout. Valid until end of month.' }
       ],
+      contentBlocks: [],
       social: { facebook: '#', twitter: '#', linkedin: '', instagram: '#' },
       footer: 'Terms and conditions apply. Cannot be combined with other offers.',
       accentColor: '#F59E0B',
@@ -74,6 +86,7 @@ export const TEMPLATES: EmailTemplate[] = [
     icon: 'calendar',
     structure: {
       logo: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=100&h=100&fit=crop',
+      logoSettings: { ...defaultLogoSettings },
       title: 'You\'re Invited! 🎤',
       body: 'Join us for an exclusive virtual summit featuring industry leaders discussing the future of technology. Don\'t miss this opportunity to learn, network, and grow.',
       buttons: [
@@ -83,6 +96,7 @@ export const TEMPLATES: EmailTemplate[] = [
       extraBlocks: [
         { id: Date.now() + 2, text: '📅 Date: January 15, 2025 | ⏰ Time: 2:00 PM EST | 📍 Virtual Event' }
       ],
+      contentBlocks: [],
       social: { facebook: '#', twitter: '#', linkedin: '#', instagram: '' },
       footer: 'Limited spots available. Register today to secure your seat.',
       accentColor: '#8B5CF6',
@@ -97,6 +111,7 @@ export const TEMPLATES: EmailTemplate[] = [
     icon: 'rocket',
     structure: {
       logo: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&h=100&fit=crop',
+      logoSettings: { ...defaultLogoSettings },
       title: 'Introducing Our Latest Innovation ✨',
       body: 'We\'ve been working on something special, and it\'s finally here. Meet our newest product – designed to make your life easier and more enjoyable.',
       buttons: [
@@ -105,6 +120,7 @@ export const TEMPLATES: EmailTemplate[] = [
       extraBlocks: [
         { id: Date.now() + 1, text: 'Early adopters get 20% off + free shipping on their first order.' }
       ],
+      contentBlocks: [],
       social: { facebook: '#', twitter: '#', linkedin: '', instagram: '#' },
       footer: 'Be the first to experience the future.',
       accentColor: '#EC4899',
@@ -119,6 +135,7 @@ export const TEMPLATES: EmailTemplate[] = [
     icon: 'heart',
     structure: {
       logo: 'https://images.unsplash.com/photo-1586717799252-bd134f5c106c?w=100&h=100&fit=crop',
+      logoSettings: { ...defaultLogoSettings },
       title: 'Thank You for Your Purchase! 💖',
       body: 'Your order is confirmed and on its way. We truly appreciate your trust in us. If you have any questions, our support team is always here to help.',
       buttons: [
@@ -126,6 +143,7 @@ export const TEMPLATES: EmailTemplate[] = [
         { id: Date.now() + 1, text: 'Contact Support', link: '#', primary: false }
       ],
       extraBlocks: [],
+      contentBlocks: [],
       social: { facebook: '#', twitter: '', linkedin: '', instagram: '#' },
       footer: 'Questions? Reply to this email or visit our help center.',
       accentColor: '#14B8A6',

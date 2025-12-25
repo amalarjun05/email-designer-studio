@@ -17,6 +17,36 @@ export const generateHTML = (data: EmailData): string => {
         <a href="${link}" style="display: inline-block; margin: 0 8px; color: ${data.accentColor}; text-decoration: none; font-weight: 600; text-transform: capitalize; font-size: 13px;">${name}</a>
       `).join(' ');
 
+  // Generate content blocks HTML
+  const contentBlocksHtml = data.contentBlocks.map(block => {
+    switch (block.type) {
+      case 'text':
+        return `<p style="margin: 16px 0; font-size: 15px; color: #6B7280; line-height: 1.7; text-align: left;">${block.content}</p>`;
+      case 'image':
+        if (!block.content) return '';
+        const imgStyle = block.imageSettings 
+          ? `transform: rotate(${block.imageSettings.rotation}deg); border-radius: ${block.imageSettings.borderRadius}px; max-width: ${block.imageSettings.size * 2}px;`
+          : 'border-radius: 12px; max-width: 200px;';
+        return `<div style="margin: 16px 0; text-align: center;"><img src="${block.content}" alt="Content" style="${imgStyle} height: auto;" /></div>`;
+      case 'button':
+        return `<div style="margin: 16px 0; text-align: center;"><a href="${block.link || '#'}" style="display: inline-block; background-color: ${data.accentColor}; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">${block.content || 'Button'}</a></div>`;
+      case 'divider':
+        return `<div style="margin: 24px 0; height: 2px; background-color: ${data.accentColor}; border-radius: 1px;"></div>`;
+      case 'spacer':
+        return `<div style="height: 32px;"></div>`;
+      default:
+        return '';
+    }
+  }).join('');
+
+  const logoStyle = `
+    width: ${data.logoSettings.size}px;
+    height: ${data.logoSettings.size}px;
+    transform: rotate(${data.logoSettings.rotation}deg);
+    border-radius: ${data.logoSettings.borderRadius}px;
+    object-fit: cover;
+  `;
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -44,8 +74,6 @@ export const generateHTML = (data: EmailData): string => {
       text-align: center; 
     }
     .logo { 
-      max-width: 80px; 
-      border-radius: 16px; 
       margin-bottom: 24px; 
     }
     .divider {
@@ -87,12 +115,13 @@ export const generateHTML = (data: EmailData): string => {
 <body>
   <div class="container">
     <div class="header">
-      <img src="${data.logo}" alt="Logo" class="logo">
+      <img src="${data.logo}" alt="Logo" class="logo" style="${logoStyle}">
       <h1>${data.title}</h1>
       <div class="divider"></div>
     </div>
     <div class="content">
       <p>${data.body}</p>
+      ${contentBlocksHtml}
       ${buttonsHtml}
       ${extraHtml}
     </div>
