@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { EmailData, EmailTemplate } from './types';
+import { EmailData, EmailTemplate, ContentBlockType, ImageSettings, ContentBlock } from './types';
 import { TEMPLATES } from './templates';
 import { generateHTML } from './generateHTML';
 import { TemplateSidebar } from './TemplateSidebar';
@@ -24,6 +24,10 @@ export const EmailCraft = () => {
 
   const updateData = (field: keyof EmailData, value: any) => {
     setData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateLogoSettings = (settings: ImageSettings) => {
+    setData(prev => ({ ...prev, logoSettings: settings }));
   };
 
   const addButton = () => {
@@ -69,6 +73,53 @@ export const EmailCraft = () => {
     }));
   };
 
+  // Content Block handlers
+  const addContentBlock = (type: ContentBlockType) => {
+    const defaultImageSettings: ImageSettings = {
+      size: 100,
+      rotation: 0,
+      borderRadius: 12
+    };
+
+    const newBlock: ContentBlock = {
+      id: Date.now(),
+      type,
+      content: type === 'text' ? 'Enter your text here...' : 
+               type === 'button' ? 'Click Me' : '',
+      link: type === 'button' ? '#' : undefined,
+      imageSettings: type === 'image' ? defaultImageSettings : undefined
+    };
+    setData(prev => ({ ...prev, contentBlocks: [...prev.contentBlocks, newBlock] }));
+    toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} block added`);
+  };
+
+  const removeContentBlock = (id: number) => {
+    setData(prev => ({ ...prev, contentBlocks: prev.contentBlocks.filter(b => b.id !== id) }));
+  };
+
+  const updateContentBlock = (id: number, field: string, value: any) => {
+    setData(prev => ({
+      ...prev,
+      contentBlocks: prev.contentBlocks.map(b => 
+        b.id === id ? { ...b, [field]: value } : b
+      )
+    }));
+  };
+
+  const moveContentBlock = (id: number, direction: 'up' | 'down') => {
+    setData(prev => {
+      const blocks = [...prev.contentBlocks];
+      const index = blocks.findIndex(b => b.id === id);
+      if (index === -1) return prev;
+      
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= blocks.length) return prev;
+      
+      [blocks[index], blocks[newIndex]] = [blocks[newIndex], blocks[index]];
+      return { ...prev, contentBlocks: blocks };
+    });
+  };
+
   const copyToClipboard = async () => {
     const html = generateHTML(data);
     try {
@@ -77,7 +128,6 @@ export const EmailCraft = () => {
       toast.success('HTML copied to clipboard!');
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
-      // Fallback for older browsers
       const textArea = document.createElement("textarea");
       textArea.value = html;
       document.body.appendChild(textArea);
@@ -140,6 +190,11 @@ export const EmailCraft = () => {
         removeExtraBlock={removeExtraBlock}
         updateExtraBlock={updateExtraBlock}
         updateSocial={updateSocial}
+        addContentBlock={addContentBlock}
+        removeContentBlock={removeContentBlock}
+        updateContentBlock={updateContentBlock}
+        moveContentBlock={moveContentBlock}
+        updateLogoSettings={updateLogoSettings}
       />
     </div>
   );

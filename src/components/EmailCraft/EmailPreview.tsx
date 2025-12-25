@@ -1,5 +1,5 @@
 import { Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
-import { EmailData } from './types';
+import { EmailData, ContentBlock } from './types';
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
 
@@ -7,6 +7,49 @@ interface EmailPreviewProps {
   data: EmailData;
   viewMode: ViewMode;
 }
+
+const ContentBlockPreview = ({ block, accentColor }: { block: ContentBlock; accentColor: string }) => {
+  switch (block.type) {
+    case 'text':
+      return (
+        <p className="text-sm text-muted-foreground leading-relaxed text-left w-full">
+          {block.content}
+        </p>
+      );
+    case 'image':
+      if (!block.content) return null;
+      return (
+        <img
+          src={block.content}
+          alt="Content"
+          className="max-w-full h-auto object-contain shadow-soft"
+          style={{
+            transform: block.imageSettings ? `rotate(${block.imageSettings.rotation}deg)` : undefined,
+            borderRadius: block.imageSettings ? `${block.imageSettings.borderRadius}px` : '12px',
+            maxWidth: block.imageSettings ? `${block.imageSettings.size * 2}px` : '200px'
+          }}
+        />
+      );
+    case 'button':
+      return (
+        <a
+          href={block.link || '#'}
+          className="px-8 py-3 rounded-xl font-semibold text-primary-foreground transition-all hover:opacity-90 hover:shadow-lg active:scale-[0.98] text-center w-fit min-w-[180px] text-sm"
+          style={{ backgroundColor: accentColor }}
+        >
+          {block.content || 'Button'}
+        </a>
+      );
+    case 'divider':
+      return (
+        <div className="w-full h-[2px] rounded-full" style={{ backgroundColor: accentColor }} />
+      );
+    case 'spacer':
+      return <div className="h-8" />;
+    default:
+      return null;
+  }
+};
 
 export const EmailPreview = ({ data, viewMode }: EmailPreviewProps) => {
   const getWidth = () => {
@@ -31,7 +74,13 @@ export const EmailPreview = ({ data, viewMode }: EmailPreviewProps) => {
             <img 
               src={data.logo} 
               alt="Logo" 
-              className="w-16 h-16 lg:w-20 lg:h-20 object-cover rounded-2xl mb-6 shadow-soft bg-secondary" 
+              className="object-cover mb-6 shadow-soft bg-secondary" 
+              style={{
+                width: `${data.logoSettings.size}px`,
+                height: `${data.logoSettings.size}px`,
+                transform: `rotate(${data.logoSettings.rotation}deg)`,
+                borderRadius: `${data.logoSettings.borderRadius}px`
+              }}
             />
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-3 leading-tight">
               {data.title}
@@ -43,6 +92,17 @@ export const EmailPreview = ({ data, viewMode }: EmailPreviewProps) => {
             <p className="text-muted-foreground leading-relaxed mb-6 max-w-md text-sm lg:text-base">
               {data.body}
             </p>
+            
+            {/* Content Blocks Preview */}
+            {data.contentBlocks.length > 0 && (
+              <div className="w-full space-y-4 mb-6">
+                {data.contentBlocks.map((block) => (
+                  <div key={block.id} className="flex justify-center animate-fade-in">
+                    <ContentBlockPreview block={block} accentColor={data.accentColor} />
+                  </div>
+                ))}
+              </div>
+            )}
             
             {/* Buttons Preview */}
             <div className="flex flex-col gap-3 w-full items-center">
