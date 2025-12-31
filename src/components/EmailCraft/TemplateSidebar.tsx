@@ -1,6 +1,8 @@
-import { Mail, Copy, Check, Download } from 'lucide-react';
-import { EmailTemplate } from './types';
+import { useRef } from 'react';
+import { Mail, Copy, Check, Download, Save, Upload, FolderOpen } from 'lucide-react';
+import { EmailTemplate, EmailData } from './types';
 import { TemplateIcon } from './TemplateIcon';
+import { toast } from 'sonner';
 
 interface TemplateSidebarProps {
   templates: EmailTemplate[];
@@ -8,7 +10,11 @@ interface TemplateSidebarProps {
   onTemplateChange: (template: EmailTemplate) => void;
   onCopy: () => void;
   onDownload: () => void;
+  onSave: () => void;
+  onLoad: () => void;
+  onImport: (data: EmailData) => void;
   copySuccess: boolean;
+  hasSavedTemplate: boolean;
 }
 
 export const TemplateSidebar = ({
@@ -17,8 +23,36 @@ export const TemplateSidebar = ({
   onTemplateChange,
   onCopy,
   onDownload,
-  copySuccess
+  onSave,
+  onLoad,
+  onImport,
+  copySuccess,
+  hasSavedTemplate
 }: TemplateSidebarProps) => {
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        if (json.title && json.logo) {
+          onImport(json);
+          toast.success('Template imported successfully!');
+        } else {
+          toast.error('Invalid template format');
+        }
+      } catch (err) {
+        toast.error('Failed to parse template file');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   return (
     <aside className="w-full lg:w-72 bg-card border-r border-border flex flex-col h-full shrink-0">
       <div className="p-5 border-b border-border flex items-center gap-3">
@@ -62,6 +96,41 @@ export const TemplateSidebar = ({
       </div>
 
       <div className="p-4 bg-secondary/30 border-t border-border space-y-2">
+        {/* Save/Load Row */}
+        <div className="flex gap-2">
+          <button 
+            onClick={onSave}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-card hover:bg-secondary border border-border text-foreground font-semibold py-2.5 px-3 rounded-xl transition-all shadow-soft active:scale-[0.98] text-sm"
+          >
+            <Save className="w-3.5 h-3.5" />
+            Save
+          </button>
+          <button 
+            onClick={onLoad}
+            disabled={!hasSavedTemplate}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-card hover:bg-secondary border border-border text-foreground font-semibold py-2.5 px-3 rounded-xl transition-all shadow-soft active:scale-[0.98] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FolderOpen className="w-3.5 h-3.5" />
+            Load
+          </button>
+        </div>
+
+        {/* Import */}
+        <button 
+          onClick={() => importInputRef.current?.click()}
+          className="w-full flex items-center justify-center gap-2 bg-card hover:bg-secondary border border-border text-foreground font-semibold py-2.5 px-4 rounded-xl transition-all shadow-soft active:scale-[0.98]"
+        >
+          <Upload className="w-4 h-4" />
+          Import Template
+        </button>
+        <input
+          type="file"
+          ref={importInputRef}
+          className="hidden"
+          accept=".json"
+          onChange={handleImport}
+        />
+
         <button 
           onClick={onCopy}
           className="w-full flex items-center justify-center gap-2 gradient-primary hover:opacity-90 text-primary-foreground font-semibold py-3 px-4 rounded-xl transition-all shadow-soft hover:shadow-glow active:scale-[0.98]"

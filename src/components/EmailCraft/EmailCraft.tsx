@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { EmailData, EmailTemplate, ContentBlockType, ImageSettings, ContentBlock } from './types';
 import { TEMPLATES } from './templates';
@@ -10,11 +10,18 @@ import { EditorSidebar } from './EditorSidebar';
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
 
+const STORAGE_KEY = 'emailcraft_saved_template';
+
 export const EmailCraft = () => {
   const [activeTemplateId, setActiveTemplateId] = useState(TEMPLATES[0].id);
   const [data, setData] = useState<EmailData>(TEMPLATES[0].structure);
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [hasSavedTemplate, setHasSavedTemplate] = useState(false);
+
+  useEffect(() => {
+    setHasSavedTemplate(!!localStorage.getItem(STORAGE_KEY));
+  }, []);
 
   const handleTemplateChange = (template: EmailTemplate) => {
     setActiveTemplateId(template.id);
@@ -50,6 +57,20 @@ export const EmailCraft = () => {
     }));
   };
 
+  const moveButton = (id: number, direction: 'up' | 'down') => {
+    setData(prev => {
+      const buttons = [...prev.buttons];
+      const index = buttons.findIndex(b => b.id === id);
+      if (index === -1) return prev;
+      
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= buttons.length) return prev;
+      
+      [buttons[index], buttons[newIndex]] = [buttons[newIndex], buttons[index]];
+      return { ...prev, buttons };
+    });
+  };
+
   const addExtraBlock = () => {
     const newBlock = { id: Date.now(), text: 'Additional content goes here...' };
     setData(prev => ({ ...prev, extraBlocks: [...prev.extraBlocks, newBlock] }));
@@ -64,6 +85,20 @@ export const EmailCraft = () => {
       ...prev,
       extraBlocks: prev.extraBlocks.map(b => b.id === id ? { ...b, text: value } : b)
     }));
+  };
+
+  const moveExtraBlock = (id: number, direction: 'up' | 'down') => {
+    setData(prev => {
+      const extraBlocks = [...prev.extraBlocks];
+      const index = extraBlocks.findIndex(b => b.id === id);
+      if (index === -1) return prev;
+      
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= extraBlocks.length) return prev;
+      
+      [extraBlocks[index], extraBlocks[newIndex]] = [extraBlocks[newIndex], extraBlocks[index]];
+      return { ...prev, extraBlocks };
+    });
   };
 
   const updateSocial = (platform: string, value: string) => {
@@ -120,6 +155,32 @@ export const EmailCraft = () => {
     });
   };
 
+  // Save/Load handlers
+  const saveTemplate = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    setHasSavedTemplate(true);
+    toast.success('Template saved to browser storage!');
+  };
+
+  const loadTemplate = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setData(parsed);
+        setActiveTemplateId('custom');
+        toast.success('Saved template loaded!');
+      } catch (e) {
+        toast.error('Failed to load saved template');
+      }
+    }
+  };
+
+  const importTemplate = (importedData: EmailData) => {
+    setData(importedData);
+    setActiveTemplateId('custom');
+  };
+
   const copyToClipboard = async () => {
     const html = generateHTML(data);
     try {
@@ -158,6 +219,19 @@ export const EmailCraft = () => {
     toast.success('HTML file downloaded!');
   };
 
+  const exportTemplateJSON = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${data.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_template.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Template JSON exported!');
+  };
+
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-background text-foreground font-sans overflow-hidden">
       <TemplateSidebar
@@ -166,7 +240,11 @@ export const EmailCraft = () => {
         onTemplateChange={handleTemplateChange}
         onCopy={copyToClipboard}
         onDownload={downloadHTML}
+        onSave={saveTemplate}
+        onLoad={loadTemplate}
+        onImport={importTemplate}
         copySuccess={copySuccess}
+        hasSavedTemplate={hasSavedTemplate}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
@@ -186,9 +264,11 @@ export const EmailCraft = () => {
         addButton={addButton}
         removeButton={removeButton}
         updateButton={updateButton}
+        moveButton={moveButton}
         addExtraBlock={addExtraBlock}
         removeExtraBlock={removeExtraBlock}
         updateExtraBlock={updateExtraBlock}
+        moveExtraBlock={moveExtraBlock}
         updateSocial={updateSocial}
         addContentBlock={addContentBlock}
         removeContentBlock={removeContentBlock}

@@ -30,9 +30,11 @@ interface EditorSidebarProps {
   addButton: () => void;
   removeButton: (id: number) => void;
   updateButton: (id: number, field: string, value: string) => void;
+  moveButton: (id: number, direction: 'up' | 'down') => void;
   addExtraBlock: () => void;
   removeExtraBlock: (id: number) => void;
   updateExtraBlock: (id: number, value: string) => void;
+  moveExtraBlock: (id: number, direction: 'up' | 'down') => void;
   updateSocial: (platform: string, value: string) => void;
   addContentBlock: (type: ContentBlockType) => void;
   removeContentBlock: (id: number) => void;
@@ -47,9 +49,11 @@ export const EditorSidebar = ({
   addButton,
   removeButton,
   updateButton,
+  moveButton,
   addExtraBlock,
   removeExtraBlock,
   updateExtraBlock,
+  moveExtraBlock,
   updateSocial,
   addContentBlock,
   removeContentBlock,
@@ -216,12 +220,28 @@ export const EditorSidebar = ({
                   <span className="text-[9px] font-bold text-muted-foreground uppercase">
                     Button {idx + 1}
                   </span>
-                  <button 
-                    onClick={() => removeButton(btn.id)} 
-                    className="text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => moveButton(btn.id, 'up')}
+                      disabled={idx === 0}
+                      className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => moveButton(btn.id, 'down')}
+                      disabled={idx === data.buttons.length - 1}
+                      className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => removeButton(btn.id)} 
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <input 
                   type="text"
@@ -259,20 +279,36 @@ export const EditorSidebar = ({
             </button>
           </div>
           <div className="space-y-2">
-            {data.extraBlocks.map((block) => (
+            {data.extraBlocks.map((block, idx) => (
               <div key={block.id} className="relative group animate-fade-in">
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <button
+                    onClick={() => moveExtraBlock(block.id, 'up')}
+                    disabled={idx === 0}
+                    className="p-1 bg-card/90 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => moveExtraBlock(block.id, 'down')}
+                    disabled={idx === data.extraBlocks.length - 1}
+                    className="p-1 bg-card/90 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <button 
+                    onClick={() => removeExtraBlock(block.id)}
+                    className="p-1 bg-card/90 text-muted-foreground hover:text-destructive transition-colors rounded"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
                 <textarea 
                   rows={2}
-                  className="w-full p-3 bg-secondary/50 border border-border rounded-xl focus:ring-2 ring-primary/20 outline-none text-xs leading-relaxed resize-none shadow-soft transition-all"
+                  className="w-full p-3 pr-24 bg-secondary/50 border border-border rounded-xl focus:ring-2 ring-primary/20 outline-none text-xs leading-relaxed resize-none shadow-soft transition-all"
                   value={block.text}
                   onChange={(e) => updateExtraBlock(block.id, e.target.value)}
                 />
-                <button 
-                  onClick={() => removeExtraBlock(block.id)}
-                  className="absolute -top-2 -right-2 p-1.5 bg-destructive/10 text-destructive rounded-full border border-destructive/20 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
               </div>
             ))}
           </div>
