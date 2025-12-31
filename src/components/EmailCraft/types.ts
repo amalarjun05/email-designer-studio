@@ -18,12 +18,21 @@ export interface ImageSettings {
 
 export type ContentBlockType = 'text' | 'image' | 'button' | 'divider' | 'spacer';
 
+export type TextAlign = 'left' | 'center' | 'right';
+
+export interface TextFormatting {
+  bold: boolean;
+  italic: boolean;
+  align: TextAlign;
+}
+
 export interface ContentBlock {
   id: number;
   type: ContentBlockType;
   content: string;
   link?: string;
   imageSettings?: ImageSettings;
+  textFormatting?: TextFormatting;
 }
 
 export interface SocialLinks {

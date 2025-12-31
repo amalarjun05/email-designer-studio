@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, forwardRef } from 'react';
 import { 
   Layout, 
   Image as ImageIcon, 
@@ -22,7 +22,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useState } from 'react';
 
 interface EditorSidebarProps {
   data: EmailData;
@@ -43,7 +42,7 @@ interface EditorSidebarProps {
   updateLogoSettings: (settings: ImageSettings) => void;
 }
 
-export const EditorSidebar = ({
+export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
   data,
   updateData,
   addButton,
@@ -60,7 +59,7 @@ export const EditorSidebar = ({
   updateContentBlock,
   moveContentBlock,
   updateLogoSettings
-}: EditorSidebarProps) => {
+}, ref) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoControlsOpen, setLogoControlsOpen] = useState(false);
 
@@ -383,4 +382,6 @@ export const EditorSidebar = ({
       </div>
     </aside>
   );
-};
+});
+
+EditorSidebar.displayName = 'EditorSidebar';

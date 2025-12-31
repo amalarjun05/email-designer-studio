@@ -8,6 +8,26 @@ const defaultLogoSettings: ImageSettings = {
 
 export const TEMPLATES: EmailTemplate[] = [
   {
+    id: 'blank',
+    name: 'Start from Scratch',
+    description: 'Create your own email template from a blank canvas.',
+    previewColor: '#71717A',
+    icon: 'plus',
+    structure: {
+      logo: '',
+      logoSettings: { ...defaultLogoSettings },
+      title: 'Your Title Here',
+      body: 'Start typing your email content here...',
+      buttons: [],
+      extraBlocks: [],
+      contentBlocks: [],
+      social: { facebook: '', twitter: '', linkedin: '', instagram: '' },
+      footer: 'Your Company • Unsubscribe',
+      accentColor: '#6366F1',
+      backgroundColor: '#FFFFFF'
+    }
+  },
+  {
     id: 'welcome',
     name: 'Welcome Series',
     description: 'Clean and friendly greeting for new subscribers.',
