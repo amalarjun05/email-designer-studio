@@ -21,12 +21,15 @@ export const generateHTML = (data: EmailData): string => {
   const contentBlocksHtml = data.contentBlocks.map(block => {
     switch (block.type) {
       case 'text':
-        return `<p style="margin: 16px 0; font-size: 15px; color: #6B7280; line-height: 1.7; text-align: left;">${block.content}</p>`;
+        const textAlign = block.textFormatting?.align ?? 'left';
+        const fontWeight = block.textFormatting?.bold ? 'font-weight: bold;' : '';
+        const fontStyle = block.textFormatting?.italic ? 'font-style: italic;' : '';
+        return `<p style="margin: 16px 0; font-size: 15px; color: #6B7280; line-height: 1.7; text-align: ${textAlign}; ${fontWeight} ${fontStyle}">${block.content}</p>`;
       case 'image':
         if (!block.content) return '';
         const imgStyle = block.imageSettings 
-          ? `transform: rotate(${block.imageSettings.rotation}deg); border-radius: ${block.imageSettings.borderRadius}px; max-width: ${block.imageSettings.size * 2}px;`
-          : 'border-radius: 12px; max-width: 200px;';
+          ? `transform: rotate(${block.imageSettings.rotation}deg); border-radius: ${block.imageSettings.borderRadius}px; max-width: ${block.imageSettings.size * 3}px; width: 100%;`
+          : 'border-radius: 12px; max-width: 300px; width: 100%;';
         return `<div style="margin: 16px 0; text-align: center;"><img src="${block.content}" alt="Content" style="${imgStyle} height: auto;" /></div>`;
       case 'button':
         return `<div style="margin: 16px 0; text-align: center;"><a href="${block.link || '#'}" style="display: inline-block; background-color: ${data.accentColor}; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">${block.content || 'Button'}</a></div>`;

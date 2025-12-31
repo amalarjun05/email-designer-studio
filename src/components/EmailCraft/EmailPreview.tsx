@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 import { EmailData, ContentBlock } from './types';
 
@@ -12,23 +13,33 @@ const ContentBlockPreview = ({ block, accentColor }: { block: ContentBlock; acce
   switch (block.type) {
     case 'text':
       return (
-        <p className="text-sm text-muted-foreground leading-relaxed text-left w-full">
+        <p 
+          className="text-sm text-muted-foreground leading-relaxed w-full"
+          style={{
+            fontWeight: block.textFormatting?.bold ? 'bold' : 'normal',
+            fontStyle: block.textFormatting?.italic ? 'italic' : 'normal',
+            textAlign: block.textFormatting?.align ?? 'left'
+          }}
+        >
           {block.content}
         </p>
       );
     case 'image':
       if (!block.content) return null;
       return (
-        <img
-          src={block.content}
-          alt="Content"
-          className="max-w-full h-auto object-contain shadow-soft"
-          style={{
-            transform: block.imageSettings ? `rotate(${block.imageSettings.rotation}deg)` : undefined,
-            borderRadius: block.imageSettings ? `${block.imageSettings.borderRadius}px` : '12px',
-            maxWidth: block.imageSettings ? `${block.imageSettings.size * 2}px` : '200px'
-          }}
-        />
+        <div className="flex justify-center w-full">
+          <img
+            src={block.content}
+            alt="Content"
+            className="h-auto object-contain shadow-soft"
+            style={{
+              transform: block.imageSettings ? `rotate(${block.imageSettings.rotation}deg)` : undefined,
+              borderRadius: block.imageSettings ? `${block.imageSettings.borderRadius}px` : '12px',
+              maxWidth: block.imageSettings ? `${block.imageSettings.size * 3}px` : '300px',
+              width: '100%'
+            }}
+          />
+        </div>
       );
     case 'button':
       return (
@@ -51,7 +62,7 @@ const ContentBlockPreview = ({ block, accentColor }: { block: ContentBlock; acce
   }
 };
 
-export const EmailPreview = ({ data, viewMode }: EmailPreviewProps) => {
+export const EmailPreview = forwardRef<HTMLDivElement, EmailPreviewProps>(({ data, viewMode }, ref) => {
   const getWidth = () => {
     switch (viewMode) {
       case 'mobile':
@@ -64,24 +75,26 @@ export const EmailPreview = ({ data, viewMode }: EmailPreviewProps) => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 lg:p-10 flex justify-center custom-scrollbar">
+    <div ref={ref} className="flex-1 overflow-y-auto p-6 lg:p-10 flex justify-center custom-scrollbar">
       <div 
         className={`transition-all duration-500 ease-out shadow-elevated rounded-2xl overflow-hidden h-fit animate-scale-in ${getWidth()}`}
         style={{ backgroundColor: data.backgroundColor }}
       >
         <div className="bg-card min-h-full">
           <div className="p-8 lg:p-10 flex flex-col items-center text-center">
-            <img 
-              src={data.logo} 
-              alt="Logo" 
-              className="object-cover mb-6 shadow-soft bg-secondary" 
-              style={{
-                width: `${data.logoSettings.size}px`,
-                height: `${data.logoSettings.size}px`,
-                transform: `rotate(${data.logoSettings.rotation}deg)`,
-                borderRadius: `${data.logoSettings.borderRadius}px`
-              }}
-            />
+            {data.logo && (
+              <img 
+                src={data.logo} 
+                alt="Logo" 
+                className="object-contain mb-6 shadow-soft bg-secondary" 
+                style={{
+                  width: `${data.logoSettings.size}px`,
+                  height: `${data.logoSettings.size}px`,
+                  transform: `rotate(${data.logoSettings.rotation}deg)`,
+                  borderRadius: `${data.logoSettings.borderRadius}px`
+                }}
+              />
+            )}
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-3 leading-tight">
               {data.title}
             </h1>
@@ -162,4 +175,6 @@ export const EmailPreview = ({ data, viewMode }: EmailPreviewProps) => {
       </div>
     </div>
   );
-};
+});
+
+EmailPreview.displayName = 'EmailPreview';

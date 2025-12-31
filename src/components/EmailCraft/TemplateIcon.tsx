@@ -1,4 +1,4 @@
-import { Sparkles, Newspaper, Tag, Calendar, Rocket, Heart } from 'lucide-react';
+import { Sparkles, Newspaper, Tag, Calendar, Rocket, Heart, Plus } from 'lucide-react';
 
 interface TemplateIconProps {
   icon: string;
@@ -19,6 +19,8 @@ export const TemplateIcon = ({ icon, className = "w-4 h-4" }: TemplateIconProps)
       return <Rocket className={className} />;
     case 'heart':
       return <Heart className={className} />;
+    case 'plus':
+      return <Plus className={className} />;
     default:
       return <Sparkles className={className} />;
   }

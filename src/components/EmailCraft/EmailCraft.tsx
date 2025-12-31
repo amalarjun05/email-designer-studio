@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { EmailData, EmailTemplate, ContentBlockType, ImageSettings, ContentBlock } from './types';
+import { EmailData, EmailTemplate, ContentBlockType, ImageSettings, ContentBlock, TextFormatting } from './types';
 import { TEMPLATES } from './templates';
 import { generateHTML } from './generateHTML';
 import { TemplateSidebar } from './TemplateSidebar';
@@ -116,13 +116,20 @@ export const EmailCraft = () => {
       borderRadius: 12
     };
 
+    const defaultTextFormatting: TextFormatting = {
+      bold: false,
+      italic: false,
+      align: 'left'
+    };
+
     const newBlock: ContentBlock = {
       id: Date.now(),
       type,
       content: type === 'text' ? 'Enter your text here...' : 
                type === 'button' ? 'Click Me' : '',
       link: type === 'button' ? '#' : undefined,
-      imageSettings: type === 'image' ? defaultImageSettings : undefined
+      imageSettings: type === 'image' ? defaultImageSettings : undefined,
+      textFormatting: type === 'text' ? defaultTextFormatting : undefined
     };
     setData(prev => ({ ...prev, contentBlocks: [...prev.contentBlocks, newBlock] }));
     toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} block added`);

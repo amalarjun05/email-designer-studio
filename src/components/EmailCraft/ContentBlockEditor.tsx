@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, forwardRef } from 'react';
 import { 
   Type, 
   Image as ImageIcon, 
@@ -9,9 +9,14 @@ import {
   GripVertical,
   Link as LinkIcon,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Bold,
+  Italic,
+  AlignLeft,
+  AlignCenter,
+  AlignRight
 } from 'lucide-react';
-import { ContentBlock, ContentBlockType, ImageSettings } from './types';
+import { ContentBlock, ContentBlockType, ImageSettings, TextFormatting, TextAlign } from './types';
 import { ImageControls } from './ImageControls';
 
 interface ContentBlockEditorProps {
@@ -39,14 +44,20 @@ const blockTypeLabels = {
   spacer: 'Spacer',
 };
 
-export const ContentBlockEditor = ({
+const defaultTextFormatting: TextFormatting = {
+  bold: false,
+  italic: false,
+  align: 'left'
+};
+
+export const ContentBlockEditor = forwardRef<HTMLElement, ContentBlockEditorProps>(({
   blocks,
   accentColor,
   onAdd,
   onRemove,
   onUpdate,
   onMove
-}: ContentBlockEditorProps) => {
+}, ref) => {
   const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
 
   const handleImageUpload = (blockId: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +67,11 @@ export const ContentBlockEditor = ({
       reader.onloadend = () => onUpdate(blockId, 'content', reader.result as string);
       reader.readAsDataURL(file);
     }
+  };
+
+  const updateTextFormatting = (blockId: number, currentFormatting: TextFormatting | undefined, field: keyof TextFormatting, value: any) => {
+    const formatting = currentFormatting || defaultTextFormatting;
+    onUpdate(blockId, 'textFormatting', { ...formatting, [field]: value });
   };
 
   return (
@@ -125,28 +141,76 @@ export const ContentBlockEditor = ({
               </div>
 
               {block.type === 'text' && (
-                <textarea
-                  rows={3}
-                  placeholder="Enter text content..."
-                  className="w-full p-2.5 bg-card border border-border rounded-lg text-xs leading-relaxed outline-none focus:ring-2 ring-primary/20 resize-none transition-all"
-                  value={block.content}
-                  onChange={(e) => onUpdate(block.id, 'content', e.target.value)}
-                />
+                <div className="space-y-2">
+                  {/* Text Formatting Controls */}
+                  <div className="flex items-center gap-1 p-1.5 bg-card border border-border rounded-lg">
+                    <button
+                      onClick={() => updateTextFormatting(block.id, block.textFormatting, 'bold', !(block.textFormatting?.bold ?? false))}
+                      className={`p-1.5 rounded transition-colors ${block.textFormatting?.bold ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary text-muted-foreground'}`}
+                      title="Bold"
+                    >
+                      <Bold className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => updateTextFormatting(block.id, block.textFormatting, 'italic', !(block.textFormatting?.italic ?? false))}
+                      className={`p-1.5 rounded transition-colors ${block.textFormatting?.italic ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary text-muted-foreground'}`}
+                      title="Italic"
+                    >
+                      <Italic className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="w-px h-4 bg-border mx-1" />
+                    <button
+                      onClick={() => updateTextFormatting(block.id, block.textFormatting, 'align', 'left')}
+                      className={`p-1.5 rounded transition-colors ${(block.textFormatting?.align ?? 'left') === 'left' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary text-muted-foreground'}`}
+                      title="Align Left"
+                    >
+                      <AlignLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => updateTextFormatting(block.id, block.textFormatting, 'align', 'center')}
+                      className={`p-1.5 rounded transition-colors ${block.textFormatting?.align === 'center' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary text-muted-foreground'}`}
+                      title="Align Center"
+                    >
+                      <AlignCenter className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => updateTextFormatting(block.id, block.textFormatting, 'align', 'right')}
+                      className={`p-1.5 rounded transition-colors ${block.textFormatting?.align === 'right' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary text-muted-foreground'}`}
+                      title="Align Right"
+                    >
+                      <AlignRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <textarea
+                    rows={3}
+                    placeholder="Enter text content..."
+                    className="w-full p-2.5 bg-card border border-border rounded-lg text-xs leading-relaxed outline-none focus:ring-2 ring-primary/20 resize-none transition-all"
+                    value={block.content}
+                    onChange={(e) => onUpdate(block.id, 'content', e.target.value)}
+                    style={{
+                      fontWeight: block.textFormatting?.bold ? 'bold' : 'normal',
+                      fontStyle: block.textFormatting?.italic ? 'italic' : 'normal',
+                      textAlign: block.textFormatting?.align ?? 'left'
+                    }}
+                  />
+                </div>
               )}
 
               {block.type === 'image' && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-2 bg-card border border-border rounded-lg">
+                  <div className="flex items-start gap-3 p-2 bg-card border border-border rounded-lg">
                     {block.content && (
-                      <img 
-                        src={block.content} 
-                        alt="Block" 
-                        className="w-12 h-12 object-cover rounded-lg"
-                        style={{
-                          transform: block.imageSettings ? `rotate(${block.imageSettings.rotation}deg)` : undefined,
-                          borderRadius: block.imageSettings ? `${block.imageSettings.borderRadius}px` : undefined
-                        }}
-                      />
+                      <div className="shrink-0 w-16 h-16 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
+                        <img 
+                          src={block.content} 
+                          alt="Block" 
+                          className="max-w-full max-h-full object-contain"
+                          style={{
+                            transform: block.imageSettings ? `rotate(${block.imageSettings.rotation}deg)` : undefined,
+                            borderRadius: block.imageSettings ? `${block.imageSettings.borderRadius}px` : undefined
+                          }}
+                        />
+                      </div>
                     )}
                     <div className="flex-1 space-y-2">
                       <button 
@@ -223,4 +287,6 @@ export const ContentBlockEditor = ({
       )}
     </section>
   );
-};
+});
+
+ContentBlockEditor.displayName = 'ContentBlockEditor';
