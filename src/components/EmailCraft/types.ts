@@ -20,10 +20,14 @@ export type ContentBlockType = 'text' | 'image' | 'button' | 'divider' | 'spacer
 
 export type TextAlign = 'left' | 'center' | 'right';
 
+export type FontFamily = 'system' | 'serif' | 'sans-serif' | 'mono' | 'georgia' | 'arial' | 'times';
+
 export interface TextFormatting {
   bold: boolean;
   italic: boolean;
   align: TextAlign;
+  fontFamily?: FontFamily;
+  fontSize?: number;
 }
 
 export interface ContentBlock {

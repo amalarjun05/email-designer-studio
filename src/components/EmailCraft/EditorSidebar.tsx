@@ -11,9 +11,10 @@ import {
   Link as LinkIcon,
   Palette,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2
 } from 'lucide-react';
-import { EmailData, ColorPalette, ContentBlockType, ImageSettings } from './types';
+import { EmailData, ColorPalette, ContentBlockType, ImageSettings, ContentBlock } from './types';
 import { COLOR_PALETTES } from './templates';
 import { ImageControls } from './ImageControls';
 import { ContentBlockEditor } from './ContentBlockEditor';
@@ -22,6 +23,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { toast } from 'sonner';
 
 interface EditorSidebarProps {
   data: EmailData;
@@ -38,8 +40,9 @@ interface EditorSidebarProps {
   addContentBlock: (type: ContentBlockType) => void;
   removeContentBlock: (id: number) => void;
   updateContentBlock: (id: number, field: string, value: any) => void;
-  moveContentBlock: (id: number, direction: 'up' | 'down') => void;
+  reorderContentBlocks: (blocks: ContentBlock[]) => void;
   updateLogoSettings: (settings: ImageSettings) => void;
+  onLogoUpload: (file: File) => Promise<void>;
 }
 
 export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
@@ -57,18 +60,31 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
   addContentBlock,
   removeContentBlock,
   updateContentBlock,
-  moveContentBlock,
-  updateLogoSettings
+  reorderContentBlocks,
+  updateLogoSettings,
+  onLogoUpload
 }, ref) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoControlsOpen, setLogoControlsOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => updateData('logo', reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    setIsUploading(true);
+    toast.loading('Uploading logo...', { id: 'logo-upload' });
+    
+    try {
+      await onLogoUpload(file);
+      toast.success('Logo uploaded!', { id: 'logo-upload' });
+    } catch (error) {
+      toast.error('Failed to upload logo', { id: 'logo-upload' });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -129,9 +145,18 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
               <div className="flex-1 space-y-2">
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-2 flex items-center justify-center gap-2 text-xs font-semibold bg-card border border-border rounded-lg hover:bg-secondary transition-all shadow-soft"
+                  disabled={isUploading}
+                  className="w-full py-2 flex items-center justify-center gap-2 text-xs font-semibold bg-card border border-border rounded-lg hover:bg-secondary transition-all shadow-soft disabled:opacity-50"
                 >
-                  <ImageIcon className="w-3.5 h-3.5" /> Upload
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-3.5 h-3.5" /> Upload to Cloud
+                    </>
+                  )}
                 </button>
                 <input 
                   type="file" 
@@ -186,14 +211,14 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
           />
         </section>
 
-        {/* Content Blocks */}
+        {/* Content Blocks with Drag & Drop */}
         <ContentBlockEditor
           blocks={data.contentBlocks}
           accentColor={data.accentColor}
           onAdd={addContentBlock}
           onRemove={removeContentBlock}
           onUpdate={updateContentBlock}
-          onMove={moveContentBlock}
+          onReorder={reorderContentBlocks}
         />
 
         {/* Buttons */}
