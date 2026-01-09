@@ -9,16 +9,28 @@ interface EmailPreviewProps {
   viewMode: ViewMode;
 }
 
+const fontFamilyMap: Record<string, string> = {
+  'system': '-apple-system, BlinkMacSystemFont, sans-serif',
+  'sans-serif': 'Arial, Helvetica, sans-serif',
+  'serif': 'Georgia, Times, serif',
+  'mono': 'Monaco, Consolas, monospace',
+  'georgia': 'Georgia, serif',
+  'arial': 'Arial, sans-serif',
+  'times': '"Times New Roman", Times, serif',
+};
+
 const ContentBlockPreview = ({ block, accentColor }: { block: ContentBlock; accentColor: string }) => {
   switch (block.type) {
     case 'text':
       return (
         <p 
-          className="text-sm text-muted-foreground leading-relaxed w-full"
+          className="text-muted-foreground leading-relaxed w-full"
           style={{
             fontWeight: block.textFormatting?.bold ? 'bold' : 'normal',
             fontStyle: block.textFormatting?.italic ? 'italic' : 'normal',
-            textAlign: block.textFormatting?.align ?? 'left'
+            textAlign: block.textFormatting?.align ?? 'left',
+            fontFamily: fontFamilyMap[block.textFormatting?.fontFamily || 'system'],
+            fontSize: `${block.textFormatting?.fontSize || 16}px`
           }}
         >
           {block.content}

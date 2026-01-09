@@ -17,6 +17,16 @@ export const generateHTML = (data: EmailData): string => {
         <a href="${link}" style="display: inline-block; margin: 0 8px; color: ${data.accentColor}; text-decoration: none; font-weight: 600; text-transform: capitalize; font-size: 13px;">${name}</a>
       `).join(' ');
 
+  const fontFamilyMap: Record<string, string> = {
+    'system': '-apple-system, BlinkMacSystemFont, sans-serif',
+    'sans-serif': 'Arial, Helvetica, sans-serif',
+    'serif': 'Georgia, Times, serif',
+    'mono': 'Monaco, Consolas, monospace',
+    'georgia': 'Georgia, serif',
+    'arial': 'Arial, sans-serif',
+    'times': '"Times New Roman", Times, serif',
+  };
+
   // Generate content blocks HTML
   const contentBlocksHtml = data.contentBlocks.map(block => {
     switch (block.type) {
@@ -24,7 +34,9 @@ export const generateHTML = (data: EmailData): string => {
         const textAlign = block.textFormatting?.align ?? 'left';
         const fontWeight = block.textFormatting?.bold ? 'font-weight: bold;' : '';
         const fontStyle = block.textFormatting?.italic ? 'font-style: italic;' : '';
-        return `<p style="margin: 16px 0; font-size: 15px; color: #6B7280; line-height: 1.7; text-align: ${textAlign}; ${fontWeight} ${fontStyle}">${block.content}</p>`;
+        const fontFamily = fontFamilyMap[block.textFormatting?.fontFamily || 'system'];
+        const fontSize = block.textFormatting?.fontSize || 16;
+        return `<p style="margin: 16px 0; font-size: ${fontSize}px; color: #6B7280; line-height: 1.7; text-align: ${textAlign}; font-family: ${fontFamily}; ${fontWeight} ${fontStyle}">${block.content}</p>`;
       case 'image':
         if (!block.content) return '';
         const imgStyle = block.imageSettings 
