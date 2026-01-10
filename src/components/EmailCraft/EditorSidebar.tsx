@@ -1,5 +1,20 @@
 import { useRef, useState, forwardRef } from 'react';
 import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { 
   Layout, 
   Image as ImageIcon, 
   Trash2, 
@@ -8,16 +23,17 @@ import {
   Twitter, 
   Linkedin, 
   Instagram, 
-  Link as LinkIcon,
   Palette,
   ChevronDown,
   ChevronUp,
   Loader2
 } from 'lucide-react';
-import { EmailData, ColorPalette, ContentBlockType, ImageSettings, ContentBlock } from './types';
+import { EmailData, ColorPalette, ContentBlockType, ImageSettings, ContentBlock, EmailButton, ExtraBlock } from './types';
 import { COLOR_PALETTES } from './templates';
 import { ImageControls } from './ImageControls';
 import { ContentBlockEditor } from './ContentBlockEditor';
+import { DraggableButton } from './DraggableButton';
+import { DraggableExtraBlock } from './DraggableExtraBlock';
 import {
   Collapsible,
   CollapsibleContent,
@@ -31,11 +47,11 @@ interface EditorSidebarProps {
   addButton: () => void;
   removeButton: (id: number) => void;
   updateButton: (id: number, field: string, value: string) => void;
-  moveButton: (id: number, direction: 'up' | 'down') => void;
+  reorderButtons: (buttons: EmailButton[]) => void;
   addExtraBlock: () => void;
   removeExtraBlock: (id: number) => void;
   updateExtraBlock: (id: number, value: string) => void;
-  moveExtraBlock: (id: number, direction: 'up' | 'down') => void;
+  reorderExtraBlocks: (blocks: ExtraBlock[]) => void;
   updateSocial: (platform: string, value: string) => void;
   addContentBlock: (type: ContentBlockType) => void;
   removeContentBlock: (id: number) => void;
@@ -51,11 +67,11 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
   addButton,
   removeButton,
   updateButton,
-  moveButton,
+  reorderButtons,
   addExtraBlock,
   removeExtraBlock,
   updateExtraBlock,
-  moveExtraBlock,
+  reorderExtraBlocks,
   updateSocial,
   addContentBlock,
   removeContentBlock,
@@ -67,6 +83,11 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoControlsOpen, setLogoControlsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,6 +112,24 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
   const applyPalette = (palette: ColorPalette) => {
     updateData('accentColor', palette.accent);
     updateData('backgroundColor', palette.background);
+  };
+
+  const handleButtonsDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = data.buttons.findIndex((b) => b.id === active.id);
+      const newIndex = data.buttons.findIndex((b) => b.id === over.id);
+      reorderButtons(arrayMove(data.buttons, oldIndex, newIndex));
+    }
+  };
+
+  const handleExtraBlocksDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = data.extraBlocks.findIndex((b) => b.id === active.id);
+      const newIndex = data.extraBlocks.findIndex((b) => b.id === over.id);
+      reorderExtraBlocks(arrayMove(data.extraBlocks, oldIndex, newIndex));
+    }
   };
 
   return (
@@ -133,7 +172,7 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
             <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl border border-border">
               <img 
                 src={data.logo} 
-                className="w-12 h-12 rounded-xl object-cover shadow-soft bg-card" 
+                className="w-12 h-12 rounded-xl object-contain shadow-soft bg-card" 
                 alt="Preview"
                 style={{
                   transform: `rotate(${data.logoSettings.rotation}deg)`,
@@ -149,22 +188,12 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
                   className="w-full py-2 flex items-center justify-center gap-2 text-xs font-semibold bg-card border border-border rounded-lg hover:bg-secondary transition-all shadow-soft disabled:opacity-50"
                 >
                   {isUploading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
-                    </>
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...</>
                   ) : (
-                    <>
-                      <ImageIcon className="w-3.5 h-3.5" /> Upload to Cloud
-                    </>
+                    <><ImageIcon className="w-3.5 h-3.5" /> Upload to Cloud</>
                   )}
                 </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept="image/*" 
-                  onChange={handleImageUpload} 
-                />
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                 <input 
                   type="text"
                   placeholder="Or paste URL"
@@ -181,10 +210,7 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
                 {logoControlsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2">
-                <ImageControls 
-                  settings={data.logoSettings} 
-                  onChange={updateLogoSettings}
-                />
+                <ImageControls settings={data.logoSettings} onChange={updateLogoSettings} />
               </CollapsibleContent>
             </Collapsible>
           </div>
@@ -192,9 +218,7 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
 
         {/* Main Content */}
         <section className="space-y-3">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
-            Main Message
-          </label>
+          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">Main Message</label>
           <input 
             type="text"
             placeholder="Headline"
@@ -221,145 +245,55 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
           onReorder={reorderContentBlocks}
         />
 
-        {/* Buttons */}
+        {/* Buttons with Drag & Drop */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              Call to Action
-            </label>
-            <button 
-              onClick={addButton} 
-              className="text-primary hover:text-primary/80 font-semibold text-[10px] flex items-center gap-1 transition-colors"
-            >
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Call to Action</label>
+            <button onClick={addButton} className="text-primary hover:text-primary/80 font-semibold text-[10px] flex items-center gap-1 transition-colors">
               <PlusCircle className="w-3 h-3" /> Add
             </button>
           </div>
-          <div className="space-y-2">
-            {data.buttons.map((btn, idx) => (
-              <div 
-                key={btn.id} 
-                className="p-3 bg-secondary/50 rounded-xl border border-border space-y-2 group animate-fade-in"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">
-                    Button {idx + 1}
-                  </span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => moveButton(btn.id, 'up')}
-                      disabled={idx === 0}
-                      className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronUp className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => moveButton(btn.id, 'down')}
-                      disabled={idx === data.buttons.length - 1}
-                      className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    </button>
-                    <button 
-                      onClick={() => removeButton(btn.id)} 
-                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <input 
-                  type="text"
-                  placeholder="Label"
-                  className="w-full p-2 bg-card border border-border rounded-lg text-xs font-semibold outline-none focus:ring-2 ring-primary/20 transition-all"
-                  value={btn.text}
-                  onChange={(e) => updateButton(btn.id, 'text', e.target.value)}
-                />
-                <div className="flex items-center gap-2 p-2 bg-card border border-border rounded-lg">
-                  <LinkIcon className="w-3 h-3 text-muted-foreground" />
-                  <input 
-                    type="text"
-                    placeholder="URL"
-                    className="flex-1 bg-transparent text-[10px] outline-none"
-                    value={btn.link}
-                    onChange={(e) => updateButton(btn.id, 'link', e.target.value)}
-                  />
-                </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleButtonsDragEnd}>
+            <SortableContext items={data.buttons.map(b => b.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2">
+                {data.buttons.map((btn, idx) => (
+                  <DraggableButton key={btn.id} button={btn} index={idx} total={data.buttons.length} onUpdate={updateButton} onRemove={removeButton} />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </section>
 
-        {/* Extra Blocks */}
+        {/* Extra Blocks with Drag & Drop */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              Extra Content
-            </label>
-            <button 
-              onClick={addExtraBlock} 
-              className="text-primary hover:text-primary/80 font-semibold text-[10px] flex items-center gap-1 transition-colors"
-            >
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Extra Content</label>
+            <button onClick={addExtraBlock} className="text-primary hover:text-primary/80 font-semibold text-[10px] flex items-center gap-1 transition-colors">
               <PlusCircle className="w-3 h-3" /> Add
             </button>
           </div>
-          <div className="space-y-2">
-            {data.extraBlocks.map((block, idx) => (
-              <div key={block.id} className="relative group animate-fade-in">
-                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                  <button
-                    onClick={() => moveExtraBlock(block.id, 'up')}
-                    disabled={idx === 0}
-                    className="p-1 bg-card/90 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded"
-                  >
-                    <ChevronUp className="w-3 h-3" />
-                  </button>
-                  <button
-                    onClick={() => moveExtraBlock(block.id, 'down')}
-                    disabled={idx === data.extraBlocks.length - 1}
-                    className="p-1 bg-card/90 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded"
-                  >
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                  <button 
-                    onClick={() => removeExtraBlock(block.id)}
-                    className="p-1 bg-card/90 text-muted-foreground hover:text-destructive transition-colors rounded"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-                <textarea 
-                  rows={2}
-                  className="w-full p-3 pr-24 bg-secondary/50 border border-border rounded-xl focus:ring-2 ring-primary/20 outline-none text-xs leading-relaxed resize-none shadow-soft transition-all"
-                  value={block.text}
-                  onChange={(e) => updateExtraBlock(block.id, e.target.value)}
-                />
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleExtraBlocksDragEnd}>
+            <SortableContext items={data.extraBlocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2">
+                {data.extraBlocks.map((block) => (
+                  <DraggableExtraBlock key={block.id} block={block} onUpdate={updateExtraBlock} onRemove={removeExtraBlock} />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </section>
 
         {/* Social Links */}
         <section className="space-y-3">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
-            Social Links
-          </label>
+          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">Social Links</label>
           <div className="grid grid-cols-1 gap-2">
             {Object.entries(data.social).map(([platform, value]) => (
-              <div 
-                key={platform} 
-                className="flex items-center gap-3 p-2.5 bg-secondary/50 border border-border rounded-xl transition-all focus-within:ring-2 ring-primary/20"
-              >
+              <div key={platform} className="flex items-center gap-3 p-2.5 bg-secondary/50 border border-border rounded-xl transition-all focus-within:ring-2 ring-primary/20">
                 {platform === 'facebook' && <Facebook className="w-4 h-4 text-muted-foreground" />}
                 {platform === 'twitter' && <Twitter className="w-4 h-4 text-muted-foreground" />}
                 {platform === 'linkedin' && <Linkedin className="w-4 h-4 text-muted-foreground" />}
                 {platform === 'instagram' && <Instagram className="w-4 h-4 text-muted-foreground" />}
-                <input 
-                  type="text"
-                  placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
-                  className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/50"
-                  value={value}
-                  onChange={(e) => updateSocial(platform, e.target.value)}
-                />
+                <input type="text" placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`} className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/50" value={value} onChange={(e) => updateSocial(platform, e.target.value)} />
               </div>
             ))}
           </div>
@@ -367,42 +301,23 @@ export const EditorSidebar = forwardRef<HTMLElement, EditorSidebarProps>(({
 
         {/* Theme Colors */}
         <section className="space-y-3 pt-6 border-t border-border">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
-            Custom Colors
-          </label>
+          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">Custom Colors</label>
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-secondary/50 rounded-xl border border-border flex flex-col items-center gap-2">
               <span className="text-[9px] font-bold text-muted-foreground uppercase">Accent</span>
-              <input 
-                type="color" 
-                className="w-10 h-10 rounded-lg cursor-pointer border-2 border-border bg-transparent" 
-                value={data.accentColor} 
-                onChange={(e) => updateData('accentColor', e.target.value)} 
-              />
+              <input type="color" className="w-10 h-10 rounded-lg cursor-pointer border-2 border-border bg-transparent" value={data.accentColor} onChange={(e) => updateData('accentColor', e.target.value)} />
             </div>
             <div className="p-3 bg-secondary/50 rounded-xl border border-border flex flex-col items-center gap-2">
               <span className="text-[9px] font-bold text-muted-foreground uppercase">Background</span>
-              <input 
-                type="color" 
-                className="w-10 h-10 rounded-lg cursor-pointer border-2 border-border bg-transparent" 
-                value={data.backgroundColor} 
-                onChange={(e) => updateData('backgroundColor', e.target.value)} 
-              />
+              <input type="color" className="w-10 h-10 rounded-lg cursor-pointer border-2 border-border bg-transparent" value={data.backgroundColor} onChange={(e) => updateData('backgroundColor', e.target.value)} />
             </div>
           </div>
         </section>
 
         {/* Footer */}
         <section className="pb-6">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-3">
-            Footer Text
-          </label>
-          <textarea 
-            rows={2}
-            className="w-full p-3 bg-secondary/50 border border-border rounded-xl text-xs text-muted-foreground outline-none focus:ring-2 ring-primary/20 shadow-soft transition-all"
-            value={data.footer}
-            onChange={(e) => updateData('footer', e.target.value)}
-          />
+          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-3">Footer Text</label>
+          <textarea rows={2} className="w-full p-3 bg-secondary/50 border border-border rounded-xl text-xs text-muted-foreground outline-none focus:ring-2 ring-primary/20 shadow-soft transition-all" value={data.footer} onChange={(e) => updateData('footer', e.target.value)} />
         </section>
       </div>
     </aside>
