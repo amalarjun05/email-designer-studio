@@ -1,7 +1,8 @@
 import { useRef } from 'react';
-import { Mail, Copy, Check, Download, Save, Upload, FolderOpen } from 'lucide-react';
+import { Mail, Copy, Check, Download, Upload } from 'lucide-react';
 import { EmailTemplate, EmailData } from './types';
 import { TemplateIcon } from './TemplateIcon';
+import { SavedTemplatesPanel } from './SavedTemplatesPanel';
 import { toast } from 'sonner';
 
 interface TemplateSidebarProps {
@@ -10,11 +11,10 @@ interface TemplateSidebarProps {
   onTemplateChange: (template: EmailTemplate) => void;
   onCopy: () => void;
   onDownload: () => void;
-  onSave: () => void;
-  onLoad: () => void;
   onImport: (data: EmailData) => void;
   copySuccess: boolean;
-  hasSavedTemplate: boolean;
+  currentData: EmailData;
+  onLoadFromCloud: (data: EmailData) => void;
 }
 
 export const TemplateSidebar = ({
@@ -23,11 +23,10 @@ export const TemplateSidebar = ({
   onTemplateChange,
   onCopy,
   onDownload,
-  onSave,
-  onLoad,
   onImport,
   copySuccess,
-  hasSavedTemplate
+  currentData,
+  onLoadFromCloud
 }: TemplateSidebarProps) => {
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,25 +94,12 @@ export const TemplateSidebar = ({
         </div>
       </div>
 
-      <div className="p-4 bg-secondary/30 border-t border-border space-y-2">
-        {/* Save/Load Row */}
-        <div className="flex gap-2">
-          <button 
-            onClick={onSave}
-            className="flex-1 flex items-center justify-center gap-1.5 bg-card hover:bg-secondary border border-border text-foreground font-semibold py-2.5 px-3 rounded-xl transition-all shadow-soft active:scale-[0.98] text-sm"
-          >
-            <Save className="w-3.5 h-3.5" />
-            Save
-          </button>
-          <button 
-            onClick={onLoad}
-            disabled={!hasSavedTemplate}
-            className="flex-1 flex items-center justify-center gap-1.5 bg-card hover:bg-secondary border border-border text-foreground font-semibold py-2.5 px-3 rounded-xl transition-all shadow-soft active:scale-[0.98] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FolderOpen className="w-3.5 h-3.5" />
-            Load
-          </button>
-        </div>
+      <div className="p-4 bg-secondary/30 border-t border-border space-y-3">
+        {/* Cloud Saving */}
+        <SavedTemplatesPanel 
+          currentData={currentData} 
+          onLoad={onLoadFromCloud}
+        />
 
         {/* Import */}
         <button 
@@ -121,7 +107,7 @@ export const TemplateSidebar = ({
           className="w-full flex items-center justify-center gap-2 bg-card hover:bg-secondary border border-border text-foreground font-semibold py-2.5 px-4 rounded-xl transition-all shadow-soft active:scale-[0.98]"
         >
           <Upload className="w-4 h-4" />
-          Import Template
+          Import JSON
         </button>
         <input
           type="file"

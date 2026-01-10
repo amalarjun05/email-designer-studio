@@ -396,11 +396,10 @@ export const EmailCraft = () => {
         onTemplateChange={handleTemplateChange}
         onCopy={copyToClipboard}
         onDownload={downloadHTML}
-        onSave={saveTemplate}
-        onLoad={loadTemplate}
         onImport={importTemplate}
         copySuccess={copySuccess}
-        hasSavedTemplate={hasSavedTemplate}
+        currentData={data}
+        onLoadFromCloud={importTemplate}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
